@@ -7,5 +7,5 @@
 ## fnm 安装
 
 ```shell
-curl -fsSL [https://fnm.vercel.app/install](https://github.com/lexmin0412/server-ready/blob/main/fnm-install.sh) | bash
+curl -fsSL https://github.com/lexmin0412/server-ready/blob/main/fnm-install.sh | bash
 ```
