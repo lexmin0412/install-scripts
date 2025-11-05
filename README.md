@@ -7,9 +7,10 @@
 ## fnm 安装
 
 ```shell
-curl -fsSL https://github.com/lexmin0412/install-scripts/blob/main/fnm-install.sh | bash
+chmod +x ./fnm-install.sh
+./fnm-install.sh
 ```
 
 ## TODO
 
-- [ ] Github Actions 定时更新。
+- [ ] Github Actions 定时更新脚本内容。
