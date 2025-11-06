@@ -94,9 +94,9 @@ jobs:
           # 将更新后的 JSON 覆盖写回
           mv "$tmp_json" source-map.json
 
-          # 组合提交信息：更新title1、title2
+          # 组合提交信息
           commit_titles=$(printf "%s、" "${changed_titles[@]}" | sed 's/、$//')
-          commit_message="更新${commit_titles}"
+          commit_message="feat(scripts): 更新 ${commit_titles}"
 
           git config user.name "${USER_NAME:-github-actions[bot]}"
           git config user.email "${USER_EMAIL:-github-actions[bot]@users.noreply.github.com}"
