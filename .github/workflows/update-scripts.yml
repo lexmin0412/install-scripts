@@ -1,0 +1,109 @@
+name: 更新脚本（每日与提交触发）
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  push:
+    branches:
+      - 'main'
+
+permissions:
+  contents: write
+
+jobs:
+  update-scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 更新脚本并提交
+        shell: bash
+        env:
+          USER_NAME: ${{ secrets.USER_NAME }}
+          USER_EMAIL: ${{ secrets.USER_EMAIL }}
+        run: |
+          set -euo pipefail
+
+          if ! command -v jq >/dev/null; then
+            echo "jq 未安装，开始安装 jq"
+            sudo apt-get update -y
+            sudo apt-get install -y jq
+          fi
+
+          if [ ! -f source-map.json ]; then
+            echo "source-map.json 不存在，跳过。"
+            exit 0
+          fi
+
+          changed_titles=()
+          tmp_json="$(mktemp)"
+          cp source-map.json "$tmp_json"
+
+          len=$(jq 'length' source-map.json)
+          if [ "$len" -eq 0 ]; then
+            echo "source-map.json 为空，跳过。"
+            exit 0
+          fi
+
+          for idx in $(seq 0 $((len-1))); do
+            source=$(jq -r ".[${idx}].source" source-map.json)
+            target=$(jq -r ".[${idx}].target" source-map.json)
+            title=$(jq -r ".[${idx}].title" source-map.json)
+            oldhash=$(jq -r ".[${idx}].hash" source-map.json)
+
+            if [ -z "$source" ] || [ "$source" = "null" ]; then
+              echo "第 $idx 条数据的 source 为空，跳过。"
+              continue
+            fi
+
+            echo "处理：$title ($source) -> $target"
+            download_file="$(mktemp)"
+            if ! curl -fsSL "$source" -o "$download_file"; then
+              echo "下载失败：$source，跳过该条。"
+              rm -f "$download_file"
+              continue
+            fi
+
+            newhash=$(sha256sum "$download_file" | awk '{print $1}')
+
+            if [ "$newhash" != "$oldhash" ]; then
+              echo "检测到更新，覆盖目标并更新 hash：$title"
+              mkdir -p "$(dirname "$target")"
+              mv "$download_file" "$target"
+
+              # 更新临时 JSON 的 hash 字段
+              updated_tmp="$(mktemp)"
+              jq ".[${idx}].hash = \"$newhash\"" "$tmp_json" > "$updated_tmp"
+              mv "$updated_tmp" "$tmp_json"
+
+              changed_titles+=("$title")
+            else
+              echo "无变化：$title"
+              rm -f "$download_file"
+            fi
+          done
+
+          if [ ${#changed_titles[@]} -eq 0 ]; then
+            echo "没有需要更新的脚本，结束。"
+            exit 0
+          fi
+
+          # 将更新后的 JSON 覆盖写回
+          mv "$tmp_json" source-map.json
+
+          # 组合提交信息：更新title1、title2
+          commit_titles=$(printf "%s、" "${changed_titles[@]}" | sed 's/、$//')
+          commit_message="更新${commit_titles}"
+
+          git config user.name "${USER_NAME:-github-actions[bot]}"
+          git config user.email "${USER_EMAIL:-github-actions[bot]@users.noreply.github.com}"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "无暂存变更，跳过提交。"
+            exit 0
+          fi
+          git commit -m "$commit_message"
+          git push
