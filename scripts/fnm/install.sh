@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# 测试变更是否触发自动更新。
+
 set -e
 
 RELEASE="latest"
