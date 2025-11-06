@@ -3,6 +3,6 @@
     "source": "https://fnm.vercel.app/install",
     "target": "./scripts/fnm/install.sh",
     "title": "fnm 安装脚本",
-    "hash": "a732195fcf0e69199a21043b9e987a0240d4b12488850c6b13abf2b3b517b522"
+    "hash": "a732195fcf0e69199a21043b9e987a0240d4b12488850c6b13abf2b3b517b523"
   }
 ]
