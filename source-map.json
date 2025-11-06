@@ -1,0 +1,8 @@
+[
+	{
+		"source": "https://fnm.vercel.app/install",
+		"target": "./scripts/fnm/install.sh",
+		"title": "fnm 安装脚本",
+		"hash": ""
+	}
+]
